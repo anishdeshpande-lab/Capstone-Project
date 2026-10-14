@@ -1,0 +1,215 @@
+:root {
+  --bg: #05070d;
+  --panel: rgba(12, 22, 40, 0.75);
+  --text: #d8e6ff;
+  --muted: #7f93b5;
+  --accent: #4fc3ff;     /* Gideon blue */
+  --accent-2: #8a7dff;
+  --speaking: #ffd36e;   /* warm gold while she talks */
+  --danger: #ff5c7a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: radial-gradient(ellipse at top, #0c1a33 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* subtle scanline overlay for the "holographic" feel */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px);
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(to bottom, rgba(5,7,13,0.95), transparent);
+  z-index: 10;
+}
+.brand { font-family: "Orbitron", sans-serif; color: var(--accent); letter-spacing: 0.2em; }
+.topbar nav { display: flex; gap: 1.25rem; flex-wrap: wrap; justify-content: flex-end; }
+.topbar a {
+  color: var(--muted); text-decoration: none; font-size: 0.9rem;
+  letter-spacing: 0.05em; transition: color 0.2s;
+}
+.topbar a:hover, .topbar a.current { color: var(--accent); }
+
+/* ---------- Sections ---------- */
+main { padding: 7rem 2rem 2rem; max-width: 900px; margin: 0 auto 0 8vw; }
+
+.section { display: none; animation: materialize 0.6s ease; }
+.section.active { display: block; }
+
+@keyframes materialize {
+  from { opacity: 0; transform: translateY(12px); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+h1, h2 { font-family: "Orbitron", sans-serif; color: var(--accent); margin-bottom: 1.25rem; }
+h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); }
+h2 { font-size: 2rem; }
+p  { line-height: 1.7; margin-bottom: 1rem; max-width: 60ch; }
+.lead { font-size: 1.2rem; }
+.hint { color: var(--muted); }
+kbd {
+  border: 1px solid var(--accent); border-radius: 4px; padding: 0 0.4em;
+  font-size: 0.85em; color: var(--accent);
+}
+a { color: var(--accent); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.card {
+  background: var(--panel);
+  border: 1px solid rgba(79,195,255,0.2);
+  border-radius: 12px; padding: 1.25rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.card h3 { margin-bottom: 0.5rem; }
+.card.highlight { border-color: var(--accent); box-shadow: 0 0 24px rgba(79,195,255,0.35); }
+
+.eyebrow {
+  font-family: "Orbitron", sans-serif; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem;
+}
+.card .meta {
+  font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent-2); margin-bottom: 0.35rem;
+}
+.card .small { font-size: 0.85rem; color: var(--muted); }
+.card > p:last-child { margin-bottom: 0; }
+.card ul:not(.chips) { padding-left: 1.1rem; margin: 0.5rem 0; line-height: 1.55; font-size: 0.92rem; }
+.card ul:not(.chips) li { margin-bottom: 0.35rem; }
+
+.chips { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+.chips li {
+  font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 999px;
+  border: 1px solid rgba(79,195,255,0.35); color: var(--accent);
+  background: rgba(79,195,255,0.06);
+}
+
+.skill-groups { display: grid; gap: 1.5rem; }
+.skill-groups h3 { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.skill-groups .chips li { font-size: 0.95rem; padding: 0.4rem 0.9rem; }
+
+.timeline { list-style: none; border-left: 2px solid var(--accent); padding-left: 1.25rem; }
+.timeline li { margin-bottom: 1rem; }
+.timeline strong { color: var(--accent); margin-right: 0.75rem; }
+
+/* ---------- Gideon panel ---------- */
+.gideon {
+  position: fixed; right: 2rem; bottom: 2rem;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1rem;
+  z-index: 20;
+}
+
+.orb {
+  position: relative; width: 120px; height: 120px;
+  border: none; background: none; cursor: pointer;
+  --level: 0; /* 0..1, set from JS based on mic volume */
+}
+.orb .core {
+  position: absolute; inset: 30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, var(--accent) 40%, transparent 70%);
+  box-shadow: 0 0 40px var(--accent);
+  transform: scale(calc(1 + var(--level) * 0.6));
+  transition: transform 0.08s linear, background 0.3s, box-shadow 0.3s;
+}
+.orb .ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid var(--accent); opacity: 0.4;
+}
+.orb .r1 { animation: spin 8s linear infinite; border-style: dashed; }
+.orb .r2 { inset: 10%; animation: spin 5s linear infinite reverse; border-color: var(--accent-2); }
+.orb .r3 { inset: -8%; opacity: 0.15; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { transform: scale(1.12); opacity: 0.6; } }
+
+/* state-driven visuals */
+.gideon[data-state="listening"] .r3 { animation: pulse 1.2s ease-in-out infinite; opacity: 0.6; }
+.gideon[data-state="listening"] .status .dot { background: var(--danger); }
+
+.gideon[data-state="speaking"] .core {
+  background: radial-gradient(circle, #fff 0%, var(--speaking) 40%, transparent 70%);
+  box-shadow: 0 0 50px var(--speaking);
+  animation: pulse 0.5s ease-in-out infinite;
+}
+.gideon[data-state="speaking"] .ring { border-color: var(--speaking); }
+
+.console {
+  width: 320px; background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(79,195,255,0.25); border-radius: 12px;
+  padding: 0.9rem; font-size: 0.85rem;
+}
+.status { display: flex; align-items: center; gap: 0.5rem; color: var(--muted); margin-bottom: 0.5rem; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.transcript { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.6rem; }
+.transcript .line { line-height: 1.4; }
+.transcript .user   { color: var(--text); }
+.transcript .user::before   { content: "YOU › "; color: var(--muted); }
+.transcript .gideon-line { color: var(--accent); }
+.transcript .gideon-line::before { content: "GIDEON › "; color: var(--accent-2); }
+.transcript .interim { opacity: 0.5; font-style: italic; }
+
+.text-form input {
+  width: 100%; padding: 0.5rem 0.7rem;
+  background: rgba(0,0,0,0.35); color: var(--text);
+  border: 1px solid rgba(79,195,255,0.25); border-radius: 8px;
+  font: inherit;
+}
+.text-form input:focus { outline: none; border-color: var(--accent); }
+
+.wake-toggle { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.6rem; color: var(--muted); cursor: pointer; }
+
+/* ---------- Boot screen ---------- */
+.boot {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center;
+  background: radial-gradient(circle, #0c1a33 0%, var(--bg) 70%);
+  transition: opacity 0.8s ease, visibility 0.8s;
+}
+.boot.hidden { opacity: 0; visibility: hidden; }
+.boot-inner { text-align: center; }
+.boot-label {
+  font-family: "Orbitron", sans-serif; letter-spacing: 0.4em;
+  color: var(--accent); margin: 0 auto 2rem; max-width: none;
+}
+.boot-btn {
+  font-family: "Orbitron", sans-serif; font-size: 1.1rem; letter-spacing: 0.2em;
+  color: var(--accent); background: transparent;
+  border: 1px solid var(--accent); border-radius: 999px;
+  padding: 1rem 2.5rem; cursor: pointer;
+  box-shadow: 0 0 24px rgba(79,195,255,0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+.boot-btn:hover { background: rgba(79,195,255,0.12); }
+.boot-hint { color: var(--muted); margin: 1.5rem auto 0; font-size: 0.9rem; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 700px) {
+  .topbar { padding: 1rem; }
+  .topbar nav {
+    gap: 0.9rem; font-size: 0.8rem;
+    flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+    scrollbar-width: none; width: 100%;
+  }
+  .topbar nav a { white-space: nowrap; }
+  .topbar nav a { font-size: 0.75rem; }
+  .brand { display: none; }
+  main { margin: 0 auto; padding: 5rem 1rem 22rem; }
+  .gideon { right: 1rem; left: 1rem; bottom: 1rem; align-items: center; }
+  .console { width: 100%; }
+  .orb { width: 90px; height: 90px; }
+}

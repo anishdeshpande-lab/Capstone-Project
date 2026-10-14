@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anish Deshpande — Gideon Interface</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/game.css" />
+</head>
+<body>
+  <!-- ===== Boot screen: browsers only allow speech after a click, so we ask for one up front ===== -->
+  <div id="boot" class="boot">
+    <div class="boot-inner">
+      <p class="boot-label">ANISH DESHPANDE</p>
+      <p class="boot-title">Two paths lie before you.</p>
+      <div class="boot-choices">
+        <button id="boot-game" class="boot-btn boot-btn-game">Begin the Trial</button>
+        <button id="boot-btn" class="boot-btn">Speak Plainly</button>
+      </div>
+      <p class="boot-hint">Turn your sound on. Gideon talks. <br />The trial is a short voice-driven quest; speaking plainly opens the regular portfolio.</p>
+    </div>
+  </div>
+
+  <!-- ===== The Shattered Chronicle: the game (see js/game.js and js/story.js) ===== -->
+  <div id="game" class="game" hidden>
+    <div class="scene" aria-hidden="true">
+      <div class="moon"></div>
+      <svg class="castle far" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
+        <path d="M0 320 V230 L140 180 L260 220 L380 160 L470 205 L560 170 L700 215 L840 150 L960 200 L1080 165 L1220 210 L1340 175 L1440 200 V320Z" />
+        <rect x="1180" y="120" width="26" height="100" />
+        <polygon points="1174,122 1193,78 1212,122" />
+        <rect x="220" y="150" width="20" height="80" />
+        <polygon points="216,152 230,118 244,152" />
+      </svg>
+      <svg class="castle near" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
+        <!-- ground -->
+        <path d="M0 320 V285 Q200 262 420 280 T900 290 T1440 275 V320Z" />
+        <!-- keep wall + battlements -->
+        <rect x="560" y="200" width="320" height="120" />
+        <g>
+          <rect x="560" y="186" width="16" height="15" /><rect x="592" y="186" width="16" height="15" />
+          <rect x="624" y="186" width="16" height="15" /><rect x="656" y="186" width="16" height="15" />
+          <rect x="784" y="186" width="16" height="15" /><rect x="816" y="186" width="16" height="15" />
+          <rect x="848" y="186" width="16" height="15" />
+        </g>
+        <!-- left tower -->
+        <rect x="500" y="130" width="70" height="190" />
+        <rect x="500" y="116" width="16" height="15" /><rect x="527" y="116" width="16" height="15" /><rect x="554" y="116" width="16" height="15" />
+        <!-- central spire -->
+        <rect x="685" y="72" width="70" height="140" />
+        <polygon points="675,74 720,0 765,74" />
+        <!-- right tower, broken -->
+        <polygon points="868,320 868,112 884,96 896,122 910,90 924,114 940,100 940,320" />
+        <!-- ruined archway -->
+        <path d="M1000 320 V230 h18 v-30 h60 v30 h18 v90 h-26 v-40 a22 22 0 0 0 -44 0 v40z" />
+        <!-- broken pillars -->
+        <rect x="300" y="250" width="18" height="70" /><polygon points="300,250 309,238 318,252" />
+        <rect x="345" y="268" width="18" height="52" />
+        <!-- candlelit windows -->
+        <rect class="window" x="714" y="104" width="12" height="22" rx="6" />
+        <rect class="window" x="529" y="170" width="10" height="18" rx="5" />
+        <rect class="window dim" x="898" y="180" width="10" height="18" rx="5" />
+      </svg>
+      <div class="fog fog-1"></div>
+      <div class="fog fog-2"></div>
+      <div id="embers" class="embers"></div>
+    </div>
+
+    <header class="game-hud">
+      <div id="shard-track" class="shard-track" aria-label="Memory shards restored"></div>
+      <div class="game-actions">
+        <button id="g-hint" class="g-btn">Hint</button>
+        <button id="g-plain" class="g-btn">Speak Plainly</button>
+      </div>
+    </header>
+
+    <div id="area-banner" class="area-banner" aria-live="polite">
+      <div class="banner-row"><span class="rule"></span><h2 id="area-title"></h2><span class="rule"></span></div>
+      <p id="area-sub"></p>
+    </div>
+
+    <div class="stage">
+      <p id="g-chapter" class="g-chapter"></p>
+      <div id="g-dialogue" class="g-dialogue"></div>
+      <p id="g-prompt" class="g-prompt"></p>
+
+      <button id="g-drum" class="g-drum" hidden aria-label="Strike the drum"><span class="drum-skin"></span></button>
+      <div id="g-pips" class="g-pips" hidden></div>
+
+      <div id="g-memory" class="g-memory" hidden>
+        <p class="memory-label">Memory Restored</p>
+        <h3 id="memory-name"></h3>
+        <div id="memory-body"></div>
+      </div>
+
+      <div id="g-finale" class="g-finale" hidden>
+        <p>Email: <a href="mailto:anishdeshpande8@gmail.com">anishdeshpande8@gmail.com</a></p>
+        <p>GitHub: <a href="https://github.com/anishdeshpande-lab" target="_blank" rel="noopener">anishdeshpande-lab</a></p>
+      </div>
+
+      <button id="g-action" class="g-action" hidden></button>
+    </div>
+  </div>
+
+  <!-- ===== Top navigation (still clickable — voice is an enhancement, not a requirement) ===== -->
+  <header class="topbar">
+    <div class="brand">A.D.</div>
+    <nav>
+      <a href="#home" data-section="home">Home</a>
+      <a href="#about" data-section="about">About</a>
+      <a href="#education" data-section="education">Education</a>
+      <a href="#skills" data-section="skills">Skills</a>
+      <a href="#projects" data-section="projects">Projects</a>
+      <a href="#experience" data-section="experience">Experience</a>
+      <a href="#awards" data-section="awards">Awards</a>
+      <a href="#activities" data-section="activities">Activities</a>
+      <a href="#contact" data-section="contact">Contact</a>
+      <button id="enter-game" class="enter-game">Enter the Ruins</button>
+    </nav>
+  </header>
+
+  <!--
+    ===== Page sections — Gideon navigates between these =====
+    Any element with data-topic can be asked about directly ("tell me about the jazz band").
+      data-topic = comma-separated phrases that refer to it
+      data-say   = what Gideon says out loud about it
+  -->
+  <main>
+    <section id="home" class="section active">
+      <p class="eyebrow">Anish Deshpande</p>
+      <h1 class="glitch">Welcome</h1>
+      <p class="lead">I'm Gideon, the interface for this site. Click the orb or press <kbd>Space</kbd> and tell me where to go.</p>
+      <p class="hint">Try: <em>"Show me Anish's projects"</em>, <em>"Where does Anish go to school?"</em>, <em>"Tell me about the jazz band"</em>, <em>"What awards has Anish won?"</em></p>
+    </section>
+
+    <section id="about" class="section">
+      <h2>About</h2>
+      <p class="lead">I'm Anish Deshpande, an Information Sciences + Data Science student at the University of Illinois Urbana-Champaign, based in Chicago.</p>
+      <p>I like turning messy, real-world information into something organized and useful, whether that's a SQL database built from spreadsheets or a statistical breakdown of John Bonham's drum solos.</p>
+      <p>Outside of data, I'm a drummer. I've played in jazz bands and combos, gigged around the local area, and was the first drummer in my high school's history to play in the pit orchestra for the annual musical.</p>
+    </section>
+
+    <section id="education" class="section">
+      <h2>Education</h2>
+      <div class="cards">
+        <article class="card" data-topic="illinois, uiuc, urbana, champaign, current school, college, university"
+          data-say="Anish currently attends the University of Illinois Urbana-Champaign, studying Information Sciences plus Data Science. Coursework there includes Data Science Exploration, Introduction to Information Sciences, and Social Aspects of Information Technology.">
+          <p class="meta">Aug 2026 – Present</p>
+          <h3>University of Illinois Urbana-Champaign</h3>
+          <p>B.S. in Information Sciences + Data Science</p>
+          <p class="small">Coursework: Data Science Exploration; Introduction to Information Sciences; Social Aspects of Information Technology</p>
+        </article>
+        <article class="card" data-topic="penn state, pennsylvania, psu, transfer"
+          data-say="Before transferring to Illinois, Anish studied Data Sciences at Penn State. Courses there included Programming and Computation one and two, covering fundamentals and data structures, along with Introduction to Data Sciences and Data Management for Data Sciences.">
+          <p class="meta">Aug 2025 – May 2026</p>
+          <h3>Pennsylvania State University</h3>
+          <p>B.S. in Data Sciences · Transferred to UIUC</p>
+          <p class="small">Coursework: Programming and Computation I &amp; II (Fundamentals, Data Structures); Introduction to Data Sciences; Data Management for Data Sciences</p>
+        </article>
+        <article class="card" data-topic="metea, high school"
+          data-say="Anish graduated from Metea Valley High School in Aurora, Illinois.">
+          <p class="meta">Aug 2021 – May 2025</p>
+          <h3>Metea Valley High School</h3>
+          <p>Aurora, IL</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="skills" class="section">
+      <h2>Technical Skills</h2>
+      <div class="skill-groups">
+        <div>
+          <h3>Programming</h3>
+          <ul class="chips"><li>Python</li><li>SQL</li></ul>
+        </div>
+        <div>
+          <h3>Python Libraries</h3>
+          <ul class="chips"><li>Pandas</li><li>NumPy</li></ul>
+        </div>
+        <div>
+          <h3>Data Analysis</h3>
+          <ul class="chips"><li>Data Cleaning</li><li>Dataset Organization</li><li>Quantitative Analysis</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="section">
+      <h2>Projects</h2>
+      <div class="cards">
+        <article class="card" data-project="1" data-topic="drum solo, bonham, led zeppelin, zeppelin, statistical analysis, statistics project"
+          data-say="Project one is an independent statistical analysis of John Bonham's drum solos. Anish collected data from about fifteen Led Zeppelin performances, counting the drum hits in each solo, then used Python and Pandas to organize the dataset and calculate the average number of hits across performances.">
+          <h3>Independent Statistical Analysis — John Bonham Drum Solos</h3>
+          <ul>
+            <li>Collected and organized observational data from ~15 Led Zeppelin performances to analyze the number of drum hits in John Bonham's solos.</li>
+            <li>Recorded performance-level data in spreadsheets and Word documents, then used Python/Pandas to organize and analyze the dataset.</li>
+            <li>Calculated the mean number of hits to find a representative average across performances.</li>
+          </ul>
+          <ul class="chips"><li>Python</li><li>Pandas</li><li>Statistics</li></ul>
+        </article>
+        <article class="card" data-project="2" data-topic="sql, database, travel"
+          data-say="Project two is a SQL travel statistics database. Anish took travel statistics that lived in spreadsheets and turned them into a structured, publicly accessible SQL database that can efficiently store and retrieve the data.">
+          <h3>SQL Travel Statistics Database</h3>
+          <ul>
+            <li>Transformed spreadsheet-based travel statistics into a publicly accessible SQL database.</li>
+            <li>Organized and structured the data so it can be stored and retrieved efficiently.</li>
+          </ul>
+          <ul class="chips"><li>SQL</li><li>Data Modeling</li></ul>
+        </article>
+        <article class="card" data-project="3" data-topic="gideon, this website, voice"
+          data-say="Project three is me. This website is a voice-controlled portfolio built with HTML, CSS, and JavaScript, using the browser's speech recognition and speech synthesis to let you navigate by talking.">
+          <h3>Gideon Interface</h3>
+          <ul>
+            <li>This website: a voice-driven portfolio inspired by Gideon from <em>The Flash</em>.</li>
+            <li>Uses the Web Speech API for speech recognition and synthesis.</li>
+          </ul>
+          <ul class="chips"><li>JavaScript</li><li>Web Speech API</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="experience" class="section">
+      <h2>Experience</h2>
+      <div class="cards">
+        <article class="card" data-topic="gig, combo, drummer and leader, jazz combo"
+          data-say="From 2022 to 2025, Anish was the drummer for a high school jazz combo that played venues throughout the local area. In senior year, Anish led the group, coordinating and performing with the band.">
+          <p class="meta">Oct 2022 – May 2025</p>
+          <h3>Gig Experience — Drummer and Leader</h3>
+          <ul>
+            <li>Performed as drummer for a high school jazz combo at venues throughout the local area.</li>
+            <li>Led the combo senior year, coordinating and performing with the group.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="awards" class="section">
+      <h2>Awards</h2>
+      <div class="cards">
+        <article class="card" data-topic="biliteracy, spanish, seal"
+          data-say="Anish earned the Seal of Biliteracy, recognizing proficiency in Spanish.">
+          <p class="meta">Mar 2024</p>
+          <h3>Seal of Biliteracy</h3>
+          <p>Demonstrated proficiency in Spanish.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="activities" class="section">
+      <h2>Clubs &amp; Activities</h2>
+      <div class="cards">
+        <article class="card" data-topic="youth and government, youth & government, attorney, legislator, bill, court"
+          data-say="In Youth and Government, Anish served two years as an attorney and one year as a legislator. As a first-year attorney, Anish advanced to Court A and won the case, and as a legislator, wrote a bill that passed unanimously in both the House and the Senate.">
+          <p class="meta">Sep 2022 – Mar 2025</p>
+          <h3>Youth &amp; Government</h3>
+          <ul>
+            <li>Attorney for two years, legislator for one, building communication, argumentation, and decision-making skills.</li>
+            <li>First year as an attorney: advanced to Court A and won the case.</li>
+            <li>As a legislator, authored a bill that passed unanimously in both the House and Senate.</li>
+          </ul>
+        </article>
+        <article class="card" data-topic="jazz band"
+          data-say="Anish drummed for Metea Valley's second-highest jazz band as a freshman, then for the top jazz band for the next three years.">
+          <p class="meta">Oct 2021 – May 2025</p>
+          <h3>Jazz Band</h3>
+          <ul>
+            <li>Drummer for the second-highest jazz band as a freshman.</li>
+            <li>Drummer for the highest jazz band for the following three years.</li>
+          </ul>
+        </article>
+        <article class="card" data-topic="pit orchestra, pit, musical, orchestra"
+          data-say="Anish became the first drummer in Metea Valley's history to play in the pit orchestra for the annual musical.">
+          <p class="meta">Feb 2021 – May 2025</p>
+          <h3>Pit Orchestra — Annual Musical</h3>
+          <ul>
+            <li>First drummer in the school's history to join the pit orchestra for the annual musical.</li>
+            <li>Took part in weekly and daily rehearsals.</li>
+          </ul>
+        </article>
+        <article class="card" data-topic="key club, volunteer, volunteering"
+          data-say="In Key Club, Anish volunteered at local shops and retirement homes around the area.">
+          <p class="meta">Aug 2021 – May 2023</p>
+          <h3>Key Club</h3>
+          <ul>
+            <li>Attended weekly meetings on volunteer opportunities.</li>
+            <li>Volunteered at local shops and retirement homes.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="contact" class="section">
+      <h2>Contact</h2>
+      <p class="lead">Want to work together or just say hi?</p>
+      <p>Email: <a href="mailto:anishdeshpande8@gmail.com">anishdeshpande8@gmail.com</a></p>
+      <p>GitHub: <a href="https://github.com/anishdeshpande-lab" target="_blank" rel="noopener">anishdeshpande-lab</a></p>
+      <p>Location: Chicago, IL</p>
+    </section>
+  </main>
+
+  <!-- ===== Gideon: the voice assistant panel ===== -->
+  <aside id="gideon" class="gideon" data-state="idle">
+    <button id="orb" class="orb" aria-label="Talk to Gideon">
+      <span class="ring r1"></span>
+      <span class="ring r2"></span>
+      <span class="ring r3"></span>
+      <span class="core"></span>
+    </button>
+
+    <div class="console">
+      <div class="status"><span class="dot"></span><span id="status-text">Standing by</span></div>
+      <div id="transcript" class="transcript" aria-live="polite"></div>
+
+      <!-- Text fallback for browsers without speech recognition (e.g. Firefox) -->
+      <form id="text-form" class="text-form">
+        <input id="text-input" type="text" placeholder="Or type a command…" autocomplete="off" />
+      </form>
+
+      <label class="wake-toggle">
+        <input type="checkbox" id="wake-mode" />
+        Always listen for "Gideon"
+      </label>
+      <label class="wake-toggle">
+        <input type="checkbox" id="voice-on" checked />
+        Speak replies out loud
+      </label>
+    </div>
+  </aside>
+
+  <script src="js/commands.js"></script>
+  <script src="js/ambience.js"></script>
+  <script src="js/gideon.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
