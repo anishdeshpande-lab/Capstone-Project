@@ -1,0 +1,271 @@
+/*
+ * game.css — "The Shattered Chronicle": moonlit ruins, embers, and fog.
+ * Loaded after style.css. Everything here is either the boot screen,
+ * the #game overlay, or a body.in-game override of the Gideon panel.
+ */
+
+[hidden] { display: none !important; }
+
+/* ---------- Boot screen (two paths) ---------- */
+.boot-title {
+  font-family: "Cormorant Garamond", serif; font-style: italic;
+  font-size: clamp(1.6rem, 4vw, 2.4rem); color: #e8dcc4;
+  margin: 0 auto 2rem; max-width: none;
+}
+.boot-choices { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.boot-btn-game {
+  font-family: "Cinzel", serif;
+  color: #f0c66b; border-color: #d9a441; background: transparent;
+  box-shadow: 0 0 28px rgba(217,164,65,0.35);
+}
+.boot-btn-game:hover { background: rgba(217,164,65,0.12); }
+.boot-btn:not(.boot-btn-game) { animation: none; }
+
+.enter-game {
+  font-family: "Cinzel", serif; font-size: 0.8rem; letter-spacing: 0.08em;
+  color: #f0c66b; background: none; cursor: pointer;
+  border: 1px solid rgba(217,164,65,0.6); border-radius: 999px;
+  padding: 0.25rem 0.8rem; white-space: nowrap;
+}
+.enter-game:hover { background: rgba(217,164,65,0.12); }
+
+/* ---------- Game palette (also re-themes the Gideon panel) ---------- */
+body.in-game {
+  --accent: #d9a441;           /* old gold */
+  --accent-2: #a1774a;
+  --speaking: #ffe3a1;
+  --panel: rgba(16, 12, 9, 0.88);
+  --text: #e8dcc4;             /* parchment */
+  --muted: #9a8b73;
+  --stone: #0d0b0a;
+  overflow: hidden;
+}
+body.in-game .topbar,
+body.in-game main { display: none; }
+body.in-game .gideon { z-index: 60; }
+body.in-game .console { border-color: rgba(217,164,65,0.3); }
+body.in-game .status { font-family: "Cinzel", serif; letter-spacing: 0.05em; }
+body.in-game .transcript .gideon-line::before { content: "WARDEN › "; }
+/* the orb becomes a guiding flame */
+body.in-game .orb .core {
+  background: radial-gradient(circle, #fff6dc 0%, #f0b85a 35%, rgba(200,90,20,0.6) 60%, transparent 72%);
+  box-shadow: 0 0 50px rgba(240,170,80,0.8);
+  animation: flicker 2.4s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { filter: brightness(1); }
+  40% { filter: brightness(1.15); }
+  60% { filter: brightness(0.9); }
+}
+
+/* ---------- Scene ---------- */
+.game {
+  position: fixed; inset: 0; z-index: 50;
+  overflow-y: auto;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at 75% 18%, rgba(190,200,230,0.12), transparent 40%),
+    linear-gradient(to bottom, #07070c 0%, #14111a 45%, #241a12 80%, #0b0806 100%);
+}
+.scene { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+
+.moon {
+  position: absolute; top: 9%; right: 14%;
+  width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #f4f1e6, #c9c3b0 70%);
+  box-shadow: 0 0 60px rgba(230,225,200,0.35), 0 0 160px rgba(230,225,200,0.15);
+  opacity: 0.85;
+}
+
+.castle { position: absolute; left: 0; bottom: 0; width: 100%; }
+.castle.far  { height: 52vh; fill: #17131c; opacity: 0.9; }
+.castle.near { height: 44vh; fill: #060505; }
+.castle .window { fill: #f0b85a; filter: drop-shadow(0 0 6px #f0b85a); animation: flicker 3s ease-in-out infinite; }
+.castle .window.dim { opacity: 0.45; animation-delay: -1.2s; }
+
+.fog {
+  position: absolute; left: -50%; width: 200%; height: 40vh; bottom: 0;
+  background: radial-gradient(ellipse at center, rgba(180,170,160,0.12), transparent 60%);
+  animation: drift 60s linear infinite;
+}
+.fog-2 { bottom: 8vh; opacity: 0.7; animation-duration: 90s; animation-direction: reverse; }
+@keyframes drift { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+
+.embers span {
+  position: absolute; bottom: -10px;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #ffb347; box-shadow: 0 0 6px 2px rgba(255,140,40,0.7);
+  animation: rise linear infinite;
+}
+@keyframes rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(var(--drift), -100vh); opacity: 0; }
+}
+
+/* ---------- HUD ---------- */
+.game-hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2rem;
+}
+.shard-track { display: flex; gap: 0.6rem; }
+.shard {
+  width: 14px; height: 14px; transform: rotate(45deg);
+  border: 1px solid rgba(217,164,65,0.6);
+  background: rgba(0,0,0,0.4);
+  transition: background 0.6s, box-shadow 0.6s;
+}
+.shard.found { background: #d9a441; box-shadow: 0 0 10px rgba(240,184,90,0.8); }
+.shard.new { animation: shard-pop 1.2s ease; }
+@keyframes shard-pop {
+  0% { transform: rotate(45deg) scale(1); }
+  40% { transform: rotate(225deg) scale(1.8); box-shadow: 0 0 24px #ffd98a; }
+  100% { transform: rotate(405deg) scale(1); }
+}
+
+.game-actions { display: flex; gap: 0.6rem; }
+.g-btn {
+  font-family: "Cinzel", serif; font-size: 0.8rem; letter-spacing: 0.08em;
+  color: var(--text); background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(217,164,65,0.4); border-radius: 4px;
+  padding: 0.4rem 0.9rem; cursor: pointer;
+}
+.g-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Location banner ---------- */
+.area-banner {
+  position: fixed; left: 0; right: 0; top: 32%; z-index: 4;
+  text-align: center; pointer-events: none;
+  padding: 1.6rem 1rem;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.75) 20%, rgba(0,0,0,0.75) 80%, transparent);
+  opacity: 0;
+}
+.area-banner.show { animation: banner 4.2s ease forwards; }
+@keyframes banner {
+  0%   { opacity: 0; letter-spacing: 0.05em; }
+  20%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; letter-spacing: 0.2em; }
+}
+.banner-row { display: flex; align-items: center; justify-content: center; gap: 1.2rem; }
+.area-banner h2 {
+  font-family: "Cinzel", serif; font-weight: 500;
+  font-size: clamp(1.6rem, 4.5vw, 3rem); letter-spacing: 0.12em;
+  color: #efe6d2; margin: 0;
+  text-shadow: 0 0 18px rgba(0,0,0,0.9);
+}
+.area-banner .rule { height: 1px; width: min(18vw, 180px); background: linear-gradient(to right, transparent, #d9a441, transparent); }
+.area-banner p {
+  font-family: "Cormorant Garamond", serif; font-style: italic;
+  color: var(--muted); margin: 0.4rem auto 0; max-width: none; font-size: 1.1rem;
+}
+.area-banner.gold h2 { color: #f0c66b; text-shadow: 0 0 24px rgba(240,184,90,0.7); }
+
+/* ---------- Stage (story text + trial) ---------- */
+.stage {
+  position: relative; z-index: 2;
+  max-width: 680px;
+  margin-left: 8vw;
+  padding: 6.5rem 1rem 3rem;
+}
+.g-chapter {
+  font-family: "Cinzel", serif; letter-spacing: 0.3em; text-transform: uppercase;
+  font-size: 0.8rem; color: var(--accent); margin-bottom: 1rem;
+}
+.g-dialogue p {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.3rem; line-height: 1.6; color: var(--text);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+  margin-bottom: 0.9rem;
+}
+.g-prompt {
+  font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 600;
+  font-size: 1.45rem; line-height: 1.5; color: #f0c66b;
+  border-left: 2px solid rgba(217,164,65,0.6);
+  padding-left: 1rem; margin: 1.2rem 0;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.9);
+}
+
+.g-action {
+  display: inline-block; margin-top: 1rem;
+  font-family: "Cinzel", serif; letter-spacing: 0.12em; font-size: 0.95rem;
+  color: #f0c66b; background: rgba(0,0,0,0.5);
+  border: 1px solid #d9a441; border-radius: 2px;
+  padding: 0.75rem 2rem; cursor: pointer;
+  box-shadow: 0 0 20px rgba(217,164,65,0.2);
+}
+.g-action:hover { background: rgba(217,164,65,0.12); }
+
+/* ---------- The drum ---------- */
+.g-drum {
+  display: grid; place-items: center;
+  width: 170px; height: 170px; margin: 1.5rem 0 0.8rem;
+  border-radius: 50%; cursor: pointer;
+  border: 6px solid #4a3220;
+  background: radial-gradient(circle, #6b4a2c 0%, #3a2616 70%);
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.7), 0 0 30px rgba(217,164,65,0.15);
+}
+.drum-skin {
+  width: 75%; height: 75%; border-radius: 50%;
+  background: radial-gradient(circle at 45% 40%, #e9d7b4, #b89a6c 70%);
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.4);
+}
+.g-drum.hit { animation: drum-hit 0.35s ease; }
+@keyframes drum-hit {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.94); box-shadow: inset 0 0 30px rgba(0,0,0,0.7), 0 0 60px rgba(255,190,90,0.8); }
+  100% { transform: scale(1); }
+}
+.g-pips { display: flex; gap: 0.6rem; margin-left: 58px; }
+.g-pips span {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1px solid #d9a441; background: transparent; transition: background 0.2s;
+}
+.g-pips span.lit { background: #f0b85a; box-shadow: 0 0 10px #f0b85a; }
+
+/* ---------- Restored memory (the real resume card) ---------- */
+.g-memory {
+  margin-top: 1.5rem; padding: 1.4rem 1.5rem;
+  background: linear-gradient(to bottom, rgba(42,33,24,0.92), rgba(22,17,12,0.92));
+  border: 1px solid rgba(217,164,65,0.55);
+  box-shadow: 0 0 40px rgba(217,164,65,0.15);
+  animation: materialize 1s ease;
+}
+.memory-label {
+  font-family: "Cinzel", serif; letter-spacing: 0.25em; text-transform: uppercase;
+  font-size: 0.75rem; color: var(--accent); margin-bottom: 0.2rem;
+}
+.g-memory h3 { font-family: "Cinzel", serif; color: #efe6d2; margin-bottom: 1rem; }
+.g-memory .card { background: none; border: none; padding: 0; box-shadow: none; }
+.g-memory .card h3 { font-family: "Inter", sans-serif; font-size: 1.05rem; color: var(--text); margin-bottom: 0.4rem; }
+.g-memory .card p, .g-memory .card li { color: var(--text); }
+.g-memory .chips li, .g-memory .skill-groups .chips li { color: #f0c66b; border-color: rgba(217,164,65,0.45); background: rgba(217,164,65,0.08); }
+.g-memory .skill-groups h3 { font-family: "Inter", sans-serif; color: var(--muted); font-size: 0.95rem; margin-bottom: 0; }
+
+.g-finale {
+  margin-top: 1.2rem; padding: 1.2rem 1.5rem;
+  border: 1px solid rgba(217,164,65,0.55);
+  background: rgba(20,15,10,0.85);
+  font-family: "Cormorant Garamond", serif; font-size: 1.2rem;
+}
+.g-finale a { color: #f0c66b; }
+
+/* ---------- Layout around the Gideon panel ---------- */
+@media (max-width: 1150px) {
+  .stage { margin: 0 auto; padding-bottom: 24rem; }
+}
+@media (max-width: 700px) {
+  .game-hud { padding: 0.8rem 1rem; flex-wrap: wrap; gap: 0.6rem; }
+  .shard { width: 11px; height: 11px; }
+  .stage { padding-top: 6rem; }
+  .g-dialogue p { font-size: 1.15rem; }
+  .g-prompt { font-size: 1.25rem; }
+  .moon { width: 60px; height: 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fog, .embers span, .castle .window, body.in-game .orb .core { animation: none; }
+  .embers { display: none; }
+}
