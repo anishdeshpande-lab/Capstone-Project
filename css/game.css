@@ -15,7 +15,7 @@
 .boot-choices { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 .boot-btn-game {
   font-family: "Cinzel", serif;
-  color: #f0c66b; border-color: #d9a441;
+  color: #f0c66b; border-color: #d9a441; background: transparent;
   box-shadow: 0 0 28px rgba(217,164,65,0.35);
 }
 .boot-btn-game:hover { background: rgba(217,164,65,0.12); }

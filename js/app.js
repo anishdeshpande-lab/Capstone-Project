@@ -2,6 +2,24 @@
  * app.js — glues Gideon (voice) to the website (sections, UI).
  */
 
+// Refuse to run inside another website's frame. Otherwise a malicious page could
+// embed this one invisibly and trick a visitor into clicking "allow microphone/camera".
+// (Same-site frames are fine; reading a cross-site parent's location throws.)
+const framedByOtherSite = (() => {
+  try { return window.top !== window.self && window.top.location.origin !== location.origin; }
+  catch { return true; }
+})();
+if (framedByOtherSite) {
+  const msg = document.createElement("p");
+  msg.style.cssText = "padding:2rem;font-family:sans-serif;color:#f5f5f7;background:#000;min-height:100vh";
+  msg.textContent = "This site can't be shown inside another page. Open it directly in its own tab.";
+  document.body.replaceChildren(msg);
+  throw new Error("Blocked: page is framed by another site");
+}
+
+const MAX_INPUT = 300;      // characters of speech/typing we'll process at once
+const MAX_LINES = 80;       // transcript lines kept on screen
+
 const panel = document.getElementById("gideon");
 const orb = document.getElementById("orb");
 const statusText = document.getElementById("status-text");
@@ -14,6 +32,8 @@ const boot = document.getElementById("boot");
 const bootBtn = document.getElementById("boot-btn");
 const bootGameBtn = document.getElementById("boot-game");
 const enterGameBtn = document.getElementById("enter-game");
+const bootMidnightBtn = document.getElementById("boot-midnight");
+const enterMidnightBtn = document.getElementById("enter-midnight");
 
 // What Gideon says when she opens each section
 const SECTION_INTROS = {
@@ -37,24 +57,62 @@ const SECTION_INTROS = {
   contact: "Here's how to get in touch with Anish. Email is the best way to reach out.",
 };
 
-// ---------- Navigation ----------
+// ---------- Navigation: one long page, Gideon scrolls to each part ----------
 
 const navHistory = [];
 let current = "home";
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const sections = [...document.querySelectorAll(".section")];
+const scrollBehavior = () => (reducedMotion.matches ? "auto" : "smooth");
 
-function goTo(id, { record = true } = {}) {
+function goTo(id, { record = true, instant = false } = {}) {
   const target = document.getElementById(id);
-  if (!target || id === current) return;
-  if (record) navHistory.push(current);
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  target.classList.add("active");
+  if (!target) return;
+  if (record && id !== current) navHistory.push(current);
+  setCurrent(id);
+  target.scrollIntoView({ behavior: instant ? "auto" : scrollBehavior(), block: "start" });
+}
+
+/** Mark a section as current: nav highlight, sliding indicator, and the URL hash. */
+function setCurrent(id) {
+  current = id;
   document.querySelectorAll(".topbar a").forEach(a =>
     a.classList.toggle("current", a.dataset.section === id)
   );
-  current = id;
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  location.hash = id;
+  moveIndicator();
+  history.replaceState(null, "", `#${id}`);
 }
+
+// Scroll spy: whichever section has crossed the upper third of the screen is "current"
+let spyQueued = false;
+function spy() {
+  spyQueued = false;
+  if (document.body.classList.contains("in-game") || document.body.classList.contains("in-midnight")) return;
+  const line = innerHeight * 0.35;
+  let id = sections[0].id;
+  for (const s of sections) if (s.getBoundingClientRect().top <= line) id = s.id;
+  if (id !== current) setCurrent(id);
+}
+addEventListener("scroll", () => {
+  if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+}, { passive: true });
+
+// Gradient bar under the current section's link
+const navEl = document.querySelector(".topbar nav");
+const indicator = navEl.appendChild(Object.assign(document.createElement("span"), { className: "nav-indicator" }));
+function moveIndicator() {
+  const link = navEl.querySelector(`a[data-section="${current}"]`);
+  if (!link) { indicator.style.opacity = 0; return; }
+  indicator.style.opacity = 1;
+  indicator.style.width = `${link.offsetWidth}px`;
+  indicator.style.transform = `translate(${link.offsetLeft}px, ${link.offsetTop + link.offsetHeight}px)`;
+  // On phones the nav scrolls sideways: keep the current link in view
+  if (navEl.scrollWidth > navEl.clientWidth) {
+    navEl.scrollTo({ left: link.offsetLeft - (navEl.clientWidth - link.offsetWidth) / 2, behavior: "smooth" });
+  }
+}
+window.addEventListener("resize", moveIndicator);
+document.fonts?.ready.then(moveIndicator); // link widths change once the web fonts load
 
 function back() {
   const prev = navHistory.pop();
@@ -65,8 +123,20 @@ function back() {
 
 function highlight(el) {
   document.querySelectorAll(".card.highlight").forEach(c => c.classList.remove("highlight"));
-  el.classList.add("highlight");
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.add("highlight", "in"); // "in": make sure it's revealed even if we jump straight to it
+
+  if (el.classList.contains("stack-card")) {
+    // Sticky project cards: scroll to the point where this card has just landed on top of the stack
+    const cards = [...el.parentElement.children];
+    let y = el.parentElement.getBoundingClientRect().top + scrollY;
+    for (const c of cards) {
+      if (c === el) break;
+      y += c.offsetHeight + parseFloat(getComputedStyle(c).marginBottom);
+    }
+    window.scrollTo({ top: y - parseFloat(getComputedStyle(el).top), behavior: scrollBehavior() });
+  } else {
+    el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
+  }
 }
 
 // Clicking the nav still works without voice
@@ -83,8 +153,9 @@ function addLine(text, who) {
   interimLine = null;
   const div = document.createElement("div");
   div.className = `line ${who === "user" ? "user" : "gideon-line"}`;
-  div.textContent = text;
+  div.textContent = text; // always textContent, never innerHTML: input is shown as text, never run as code
   transcript.appendChild(div);
+  while (transcript.childElementCount > MAX_LINES) transcript.firstElementChild.remove();
   transcript.scrollTop = transcript.scrollHeight;
 }
 
@@ -110,9 +181,14 @@ const STATUS_LABELS = { idle: "Standing by", listening: "Listening…", speaking
 
 const gideon = new Gideon({
   onResult: respond,
-  onInterim: showInterim,
+  onInterim: (text) => {
+    text = text.slice(0, MAX_INPUT);
+    showInterim(text);
+    if (Midnight.active) Midnight.handleInterim(text);
+  },
   onStateChange: (state) => {
     panel.dataset.state = state;
+    if (state !== "idle") panel.classList.remove("collapsed"); // open the panel when she listens or talks
     if (state === "speaking") Ambience.speakStart();
     else Ambience.speakEnd();
     statusText.textContent = wakeToggle.checked && state === "idle" ? 'Say "Gideon…"' : STATUS_LABELS[state];
@@ -136,13 +212,18 @@ const ctx = {
   sectionIntro: (id) => SECTION_INTROS[id],
 };
 
+const ENTER_MIDNIGHT = /\b((open|read) the book|midnight reading)\b/i;
 const ENTER_GAME = /\b(enter the ruins|return to the ruins|(play|start|begin|enter|return to) the (game|trial|journey|quest|ruins))\b/i;
 
 function respond(text) {
+  text = String(text ?? "").slice(0, MAX_INPUT).trim();
+  if (!text) return;
   addLine(text, "user");
 
-  // While the game runs, it gets every word
+  // While a game mode runs, it gets every word
+  if (Midnight.active) return Midnight.handleFinal(text);
   if (Game.active) return Game.handle(text);
+  if (ENTER_MIDNIGHT.test(text)) return Midnight.open();
   if (ENTER_GAME.test(text)) return Game.start();
 
   let reply = handleCommand(text, ctx);
@@ -166,7 +247,7 @@ orb.addEventListener("click", () => {
 
 // Spacebar = push to talk (unless typing in the text box)
 document.addEventListener("keydown", (e) => {
-  if (!booted) return; // the boot screen's button handles Space/Enter itself
+  if (!booted || Midnight.active) return; // boot screen buttons / reading mode handle their own keys
   if (e.code === "Space" && document.activeElement !== textInput) {
     e.preventDefault();
     orb.click();
@@ -201,29 +282,44 @@ function greeting() {
   const h = new Date().getHours();
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   return gideon.supported
-    ? `${part}. I am Gideon. Click the orb or press space, then tell me where you'd like to go. Or say "enter the ruins" to play the game.`
+    ? `${part}. I am Gideon. Scroll to explore, or press space and tell me where you'd like to go. Or say "enter the ruins" to play the game.`
     : `${part}. I am Gideon. Voice input isn't available in this browser, but you can type commands and I'll answer out loud.`;
+}
+
+/** Hide the boot screen and play the hero's entrance (it shows behind any game mode too). */
+function dismissBoot() {
+  booted = true;
+  Ambience.init();
+  boot.classList.add("hidden");
+  document.body.classList.add("loaded");
+  moveIndicator();
 }
 
 // "Speak Plainly": the normal portfolio
 bootBtn.addEventListener("click", () => {
-  booted = true;
-  Ambience.init();
-  boot.classList.add("hidden");
+  dismissBoot();
   say(greeting());
 });
 
 // "Begin the Trial": the game
 bootGameBtn.addEventListener("click", () => {
-  booted = true;
-  Ambience.init();
-  boot.classList.add("hidden");
+  dismissBoot();
   Game.start();
 });
 bootGameBtn.focus();
 
 enterGameBtn.addEventListener("click", () => Game.start());
 
+// "The Midnight Reading": the horror mode
+bootMidnightBtn.addEventListener("click", () => {
+  dismissBoot();
+  Midnight.open();
+});
+enterMidnightBtn.addEventListener("click", () => Midnight.open());
+
+// Gideon's panel collapses to just the orb so it never covers the page
+document.getElementById("console-close").addEventListener("click", () => panel.classList.add("collapsed"));
+
 // Support deep links like index.html#projects
 const initial = location.hash.slice(1);
-if (initial && document.getElementById(initial)) goTo(initial, { record: false });
+if (initial && document.getElementById(initial)) goTo(initial, { record: false, instant: true });

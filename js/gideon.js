@@ -22,6 +22,7 @@ class Gideon {
     this.onError = onError;
 
     this.wakeMode = false; // when true, listen continuously and only act on "Gideon, ..."
+    this.dictation = false; // when true, listen continuously and pass along EVERYTHING (Midnight Reading)
     this.listening = false;
     this.speaking = false;
     this.muted = false;
@@ -70,7 +71,7 @@ class Gideon {
       this.listening = false;
       // In wake mode, restart automatically (browsers stop after silence)
       if (this.speaking) return; // _doneSpeaking() restarts it after she finishes
-      if (this.wakeMode) {
+      if (this.wakeMode || this.dictation) {
         try { rec.start(); return; } catch { /* already started */ }
       }
       this._setState("idle");
@@ -81,7 +82,7 @@ class Gideon {
 
   _handleFinal(text) {
     if (!text) return;
-    if (this.wakeMode) {
+    if (this.wakeMode && !this.dictation) {
       // Only respond to phrases that contain the wake word
       const m = text.match(/\b(gideon|gidion|gideons)\b[,\s]*(.*)/i);
       if (!m) return;
@@ -97,12 +98,19 @@ class Gideon {
       return;
     }
     this.stopSpeaking();
-    this.recognition.continuous = this.wakeMode;
+    this.recognition.continuous = this.wakeMode || this.dictation;
     try { this.recognition.start(); } catch { /* already running */ }
   }
 
   stopListening() {
     this.recognition?.stop();
+  }
+
+  /** Continuous listening with no wake word, e.g. for reading a book aloud. */
+  setDictation(on) {
+    this.dictation = on;
+    this.stopListening();
+    if (on) setTimeout(() => { if (!this.speaking) this.listen(); }, 300);
   }
 
   setWakeMode(on) {
@@ -193,7 +201,7 @@ class Gideon {
     this.speaking = false;
     this._utterances = [];
     this._setState("idle");
-    if (this.wakeMode) this.listen(); // resume listening for the wake word
+    if (this.wakeMode || this.dictation) this.listen(); // resume continuous listening
   }
 
   stopSpeaking() {

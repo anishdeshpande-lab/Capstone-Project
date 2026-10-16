@@ -57,8 +57,15 @@ const Game = (() => {
 
   function load() {
     try {
+      // The save lives in the visitor's browser, so treat it as untrusted:
+      // rebuild it from known-good values instead of using it as-is.
       const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (saved && Array.isArray(saved.shards)) return saved;
+      const validNames = SHARD_CHAPTERS.map(c => c.reward.name);
+      if (saved && typeof saved === "object") {
+        const chapter = Number.isInteger(saved.chapter) && saved.chapter >= 0 && saved.chapter < STORY.length ? saved.chapter : 0;
+        const shards = Array.isArray(saved.shards) ? validNames.filter(n => saved.shards.includes(n)) : [];
+        return { chapter, shards, complete: saved.complete === true && shards.length === validNames.length };
+      }
     } catch { /* storage blocked or corrupt */ }
     return { chapter: 0, shards: [], complete: false };
   }
@@ -197,7 +204,11 @@ const Game = (() => {
     el.memoryBody.replaceChildren();
     if (source) {
       const copy = source.cloneNode(true);
-      copy.classList.remove("highlight");
+      // Drop the page's scroll-effect classes/styles (reveal, sticky stacking, timeline dots)
+      copy.className = copy.classList.contains("card") ? "card" : "skill-groups";
+      copy.removeAttribute("style");
+      copy.querySelectorAll(".reveal").forEach(e => e.classList.remove("reveal", "in", "left", "right", "zoom"));
+      copy.querySelector(".stack-num")?.remove();
       // Strip voice metadata so findTopic() never matches this copy instead of the real card
       ["data-topic", "data-say", "data-project"].forEach(a => copy.removeAttribute(a));
       el.memoryBody.appendChild(copy);
