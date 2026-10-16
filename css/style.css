@@ -38,6 +38,16 @@ kbd {
   border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 0.05em 0.45em;
   font-family: inherit; font-size: 0.85em; color: var(--text);
 }
+/* Keyboard users always see where they are */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.skip-link {
+  position: fixed; top: 0.5rem; left: 0.5rem; z-index: 200;
+  padding: 0.6rem 1rem; border-radius: 8px;
+  background: var(--text); color: #000; font-weight: 600; text-decoration: none;
+  transform: translateY(-150%); transition: transform 0.2s;
+}
+.skip-link:focus { transform: none; }
+
 .grad {
   background: var(--grad);
   -webkit-background-clip: text; background-clip: text;
@@ -189,12 +199,10 @@ body.loaded .hero-in { animation: hero-rise 1.2s var(--ease) both; animation-del
   letter-spacing: -0.035em; line-height: 1.15; max-width: 26ch;
 }
 .statement-text em { font-style: normal; }
-.statement-text .w { color: rgba(245,245,247,0.15); transition: color 0.35s ease; }
+/* unlit words stay readable (≥3:1 contrast for large text) while still clearly "off" */
+.statement-text .w { color: rgba(245,245,247,0.42); transition: color 0.35s ease; }
 .statement-text .w.lit { color: var(--text); }
-.statement-text .w.key.lit {
-  background: var(--grad); background-size: 300% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
+.statement-text .w.key.lit { color: var(--accent); } /* solid color (not see-through gradient text) keeps contrast measurable */
 
 /* ---------- Stats ---------- */
 .stats {

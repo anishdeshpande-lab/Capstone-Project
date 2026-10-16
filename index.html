@@ -22,6 +22,8 @@
     form-action 'none';
     frame-src 'none'" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <!-- Replaced with the git commit during deployment, so the pipeline can verify the live site is current -->
+  <meta name="build-commit" content="local" />
   <title>Anish Deshpande — Gideon Interface</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
@@ -166,6 +168,7 @@
 
   <!-- ===== Scroll progress + top navigation (links scroll to each part; voice is an enhancement, not a requirement) ===== -->
   <div id="scroll-progress" class="scroll-progress" aria-hidden="true"></div>
+  <a class="skip-link" href="#about">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="#home" data-section="home">Anish Deshpande</a>
     <nav>

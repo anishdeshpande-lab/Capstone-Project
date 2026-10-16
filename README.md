@@ -55,23 +55,44 @@ python -m pytest -v
 |---|---|
 | `tests/test_normal_use.py` | **Normal use:** opening the site, voice commands scrolling to sections, asking about a specific item, nav links, every scroll animation firing, a full playthrough of the game, the horror mode following along as lines are read |
 | `tests/test_edge_cases.py` | **Edge cases:** script-injection attempts typed into Gideon (shown as text, never run), empty and 100,000-character input, unknown commands, wrong game answers, tampered save data, injected `<script>` tags blocked by the Content Security Policy, other sites trying to embed the page, malicious URL hashes |
+| `tests/test_accessibility.py` | **Usability and accessibility:** an automated [axe-core](https://github.com/dequelabs/axe-core) audit (fails on any serious or critical issue), keyboard use, the skip link, and no sideways scrolling on a phone-sized screen |
 
-## CI/CD (GitHub Actions)
+## CI/CD (GitHub Actions): PR to production
 
 Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 
-| Trigger | Jobs |
-|---|---|
-| Every pull request | `lint` (every JS file must parse) and `tests` (the full Playwright suite) |
-| Push to `main` (a merged PR) | `lint` and `tests` again, then **`deploy`** to GitHub Pages, which only runs if both pass |
-
-**Branch protection on `main`** requires the `lint` and `tests` checks to pass before a pull request can be merged, so only verified code reaches the live site.
+1. **PR checks:** every pull request runs three jobs:
+   - `lint`: every JavaScript file must parse
+   - `tests`: the full Playwright suite
+   - `build`: assembles the deployable site, stamps it with the commit, and fails if any file the page references is missing
+2. **Merge gate:** branch protection on `main` requires `lint`, `tests`, and `build` to pass before merging. This applies to admins too, so failing code can't reach `main`.
+3. **Update main:** after a merge, the same checks run again on `main`, and then `deploy` publishes the build to GitHub Pages.
+4. **Verify live site:** after deploying, the pipeline loads the live site and confirms it is serving the exact commit that was just deployed (via `<meta name="build-commit">`). If it isn't, the run fails.
 
 ## Deployment
 
-Deployment is automatic: merging a pull request into `main` triggers the workflow, and after the checks pass, the `deploy` job publishes `index.html`, `css/`, and `js/` to GitHub Pages. Tests and tooling are not deployed.
+Deployment is automatic: merging a pull request into `main` triggers the workflow, and after the checks pass, `deploy` publishes `index.html`, `css/`, and `js/` to GitHub Pages. Tests and tooling are not deployed.
 
-One-time setup (already done for this repo): **Settings → Pages → Source: GitHub Actions**, and **Settings → Branches → protect `main`, require status checks `lint` and `tests`**.
+One-time setup (already done for this repo): **Settings → Pages → Source: GitHub Actions**, and **Settings → Branches → protect `main`, require status checks `lint`, `tests`, and `build`**.
+
+## Pipeline evidence
+
+| Evidence | Link |
+|---|---|
+| Pull request with failed and corrected runs | [PR #1](https://github.com/anishdeshpande-lab/Capstone-Project/pull/1) |
+| ❌ Failed check: tests caught a real bug (the startup screen kept blocking clicks while fading out) | [run 38838156913](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838156913) |
+| ✅ Corrected passing run | [run 38838663454](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838663454) |
+| 🚀 Deployment from `main` | [run 38838771186](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838771186) |
+| All workflow runs | [Actions](https://github.com/anishdeshpande-lab/Capstone-Project/actions) |
+
+## Accessibility
+
+- Every feature works without voice: nav links, buttons, typing to Gideon, on-screen drum taps, and arrow keys instead of eye contact
+- Visible keyboard focus outlines, plus a "Skip to content" link
+- <kbd>Space</kbd> talks to Gideon only when focus isn't on a button, link, or text field
+- Respects the system **reduce motion** setting: everything is shown, nothing animates
+- Text meets WCAG AA contrast, checked automatically by axe-core in CI
+- The horror mode has a warning before it starts and a **gentle mode** without jump scares
 
 ## Security
 
@@ -90,7 +111,9 @@ This project was built with substantial help from **Claude (Anthropic), via Clau
 
 - the voice engine, command matching, and the scrolling page's design and animations
 - both games (story, riddles, gaze tracking, generated sound effects)
-- the security hardening, the automated test suite, the GitHub Actions workflow, and this README's first draft
+- the security hardening, accessibility fixes, the automated test suite, the GitHub Actions workflow, and this README's first draft
+
+`tests/vendor/axe.min.js` is the open-source axe-core library (MPL-2.0, Deque Systems), included unmodified for the accessibility test.
 
 All résumé content comes from my own résumé. I checked behavior by running the site and the test suite.
 
