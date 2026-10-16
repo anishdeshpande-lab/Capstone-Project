@@ -83,7 +83,15 @@ One-time setup (already done for this repo): **Settings → Pages → Source: Gi
 | ❌ Failed check: tests caught a real bug (the startup screen kept blocking clicks while fading out) | [run 38838156913](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838156913) |
 | ✅ Corrected passing run | [run 38838663454](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838663454) |
 | 🚀 Deployment from `main` | [run 38838771186](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38838771186) |
+| Pull request with all three required checks (`lint`, `tests`, `build`) | [PR #2](https://github.com/anishdeshpande-lab/Capstone-Project/pull/2) |
+| 🚀 Deployment from `main` with live-site verification (the last step of the `deploy` job confirms the live site serves the deployed commit) | [run 38840831698](https://github.com/anishdeshpande-lab/Capstone-Project/actions/runs/38840831698) |
 | All workflow runs | [Actions](https://github.com/anishdeshpande-lab/Capstone-Project/actions) |
+
+**How to check it yourself**
+1. Open **PR #1** and scroll its timeline: each commit shows a red ✗ or green ✓, with three failing runs before the fix that passes.
+2. Open any run, click the **tests** job, then **Run test suite (normal use, edge cases, accessibility)**, to see every test pass by name.
+3. To confirm the live site matches `main`: on the live site, choose **View Page Source** and find `build-commit`. It shows the commit currently deployed.
+4. To run the tests locally, see [Tests](#tests).
 
 ## Accessibility
 
