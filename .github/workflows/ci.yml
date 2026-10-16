@@ -1,8 +1,9 @@
-# CI/CD for the Gideon portfolio.
-#  - Every pull request: run the checks (lint + browser test suite). Branch protection
-#    on main requires both to pass before a PR can be merged.
-#  - Every push to main (i.e. a merged PR): run the same checks again, and only if they
-#    pass, deploy the site to GitHub Pages.
+# CI/CD for the Gideon portfolio — "PR to production":
+#  1. PR checks:      every pull request runs lint (quality), tests, and build.
+#  2. Merge gate:     branch protection on main requires all three to pass.
+#  3. Update main:    the merged code is checked again, then deployed automatically.
+#  4. Verify live:    after deploying, the pipeline loads the live site and confirms
+#                     it is serving the exact commit that was just deployed.
 
 name: CI
 
@@ -18,18 +19,18 @@ permissions:
 jobs:
   lint:
     name: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check every JavaScript file parses
         run: for f in js/*.js; do node --check "$f" && echo "ok  $f"; done
 
   tests:
     name: tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -38,14 +39,36 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Install Chromium for Playwright
         run: python -m playwright install --with-deps chromium
-      - name: Run test suite (normal use + edge cases)
+      - name: Run test suite (normal use, edge cases, accessibility)
         run: python -m pytest -v
+
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Assemble the site (only what visitors need; no tests or tooling)
+        run: |
+          mkdir _site
+          cp -r index.html css js _site/
+          sed -i "s/name=\"build-commit\" content=\"local\"/name=\"build-commit\" content=\"$GITHUB_SHA\"/" _site/index.html
+          grep -q "content=\"$GITHUB_SHA\"" _site/index.html && echo "Stamped build with $GITHUB_SHA"
+      - name: Verify every file the page references exists
+        run: |
+          missing=0
+          for f in $(grep -oE '(src|href)="[^"]+"' _site/index.html | sed -E 's/^(src|href)="([^"]+)"$/\2/' | grep -vE '^(https?:|mailto:|#|data:)'); do
+            if [ -f "_site/$f" ]; then echo "ok       $f"; else echo "MISSING  $f"; missing=1; fi
+          done
+          exit $missing
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
 
   deploy:
     name: deploy
-    needs: [lint, tests]
+    needs: [lint, tests, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
@@ -56,15 +79,20 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - name: Collect only the site's files (no tests or tooling)
-        run: |
-          mkdir _site
-          cp -r index.html css js _site/
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the live site is serving this commit
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          for i in $(seq 1 30); do
+            if curl -fsS "${url}?v=${GITHUB_SHA}" | grep -q "content=\"${GITHUB_SHA}\""; then
+              echo "Live site ${url} is serving commit ${GITHUB_SHA}"
+              exit 0
+            fi
+            echo "Attempt $i: not live yet, retrying in 10s"
+            sleep 10
+          done
+          echo "Live site never served commit ${GITHUB_SHA}"
+          exit 1

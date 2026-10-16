@@ -248,7 +248,8 @@ orb.addEventListener("click", () => {
 // Spacebar = push to talk (unless typing in the text box)
 document.addEventListener("keydown", (e) => {
   if (!booted || Midnight.active) return; // boot screen buttons / reading mode handle their own keys
-  if (e.code === "Space" && document.activeElement !== textInput) {
+  // Leave Space alone on buttons, links, and form fields so keyboard users can still press them
+  if (e.code === "Space" && !e.target.closest("input, textarea, select, button, a, [contenteditable]")) {
     e.preventDefault();
     orb.click();
   }
