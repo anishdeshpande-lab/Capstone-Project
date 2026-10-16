@@ -67,9 +67,14 @@ def test_game_full_playthrough(site):
                    "python", "onward", "select", "onward"]:
         type_command(site, answer)
     expect(site.locator("#g-chapter")).to_have_text("Chapter V")
-    for _ in range(3):                      # the drum trial, tapped on screen
-        site.click("#g-drum")
-        site.wait_for_timeout(200)
+    # The drum trial, tapped on screen. (Chrome's fake microphone in CI plays beeps that
+    # the clap detector may also count, so stop tapping once the drum has disappeared.)
+    drum = site.locator("#g-drum")
+    for _ in range(3):
+        if not drum.is_visible():
+            break
+        drum.dispatch_event("click")
+        site.wait_for_timeout(250)
     expect(site.locator("#memory-name")).to_have_text("Shard of Thunder")
     for answer in ["onward", "the rhythm", "onward", "the truth", "onward", "hola", "onward"]:
         type_command(site, answer)
