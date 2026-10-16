@@ -412,7 +412,7 @@ body.in-game .scroll-progress, body.in-midnight .scroll-progress { display: none
   background: radial-gradient(circle at 50% 40%, #0b1626 0%, #000 65%);
   transition: opacity 0.8s ease, visibility 0.8s;
 }
-.boot.hidden { opacity: 0; visibility: hidden; }
+.boot.hidden { opacity: 0; visibility: hidden; pointer-events: none; } /* stop catching clicks immediately, not after the fade */
 .boot-inner { text-align: center; padding: 0 1.25rem; }
 .boot-label {
   font-weight: 600; letter-spacing: 0.3em; font-size: 0.85rem;
