@@ -107,7 +107,7 @@ The site has no server code, database, logins, or secrets, so the attack surface
 
 ## AI use
 
-This project was built with substantial help from **Claude (Anthropic), via Claude Code**, an AI coding assistant. I directed the project (the idea, the features, the content, the design direction, and every change request) and reviewed and tested the results; the AI wrote most of the code, including:
+This project was built with substantial help from **Claude (Anthropic), via Claude Code**, an AI coding assistant. I directed the project (the idea, the features, the content, the design direction, and every change request) and reviewed, tested, and debugged the results; the AI wrote most of the code, including:
 
 - the voice engine, command matching, and the scrolling page's design and animations
 - both games (story, riddles, gaze tracking, generated sound effects)
